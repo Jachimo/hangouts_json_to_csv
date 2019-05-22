@@ -46,15 +46,14 @@ def describe(json_path):
     
     print("Reading " + json_path)
     
-    with open(json_path, 'r') as json_file:
-        data = ijson.items(json_file, 'item')
-        participants_id_map = get_participants(data)  # returns dictionary of {userid:username}
+    with open(json_path, 'rb') as json_file:
+        participants_id_map = get_participants(json_file)  # returns dictionary of {userid:username}
         chats = {}
         message_count = 0
         
         print("Found " + str(len(participants_id_map)) + " participants")
         
-        for event in find_nodes(data, 'event'):
+        for event in ijson.items(json_file, 'conversations.item.events.item'):
             for conversation in event:
                 conversation_id = find_node(conversation, 'id')
                 timestamp = int(find_node(conversation, 'timestamp')) / 10**6
@@ -117,16 +116,35 @@ def find_node(root, query):
     return None
 
 
-def get_participants(json_data):
+def get_participants(json_file):
     """ Finds all participants in Google Hangouts JSON log and returns dictionary
         { user_id : username }. """
+    
+    json_file.seek(0)  # ensure we are at beginning of file
+    
+    all_participant_data = ijson.items(json_file, 'conversations.item.conversation.conversation.participant_data')
+    
+    participants_id_map = {}
+    for conv_participants in all_participant_data:
+        for participant in conv_participants:
+            user_id = find_node(participant['id'], 'gaia_id')
+            try:
+                username = participant['fallback_name'].encode('utf-8')  # this sometimes throws KeyError
+            except KeyError:
+                username = 'user_' + user_id  # use user id if we can't determine name
+            participants_id_map[user_id] = username
 
-    all_participant_data = find_nodes(json_data, 'participant_data')
+    return participants_id_map
+
+    """ Finds all participants in Hangouts JSON log and returns dictionary
+        of {user_id:username}.  Parses using ijson rather than json library. """
+    
+    all_participant_data = ijson.items(json_file, 'conversations.item.conversation.conversation.participant_data')
 
     participants_id_map = {}
     for conv_participants in all_participant_data:
         for participant in conv_participants:
-            username = participant['fallback_name'].encode('utf-8')
+            username = participant['fallback_name'].encode('utf-8')  # this sometimes throws KeyError
             user_id = find_node(participant['id'], 'gaia_id')
             participants_id_map[user_id] = username
 
