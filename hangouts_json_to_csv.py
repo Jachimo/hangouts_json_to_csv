@@ -3,7 +3,7 @@ from datetime import datetime as dt
 import sys
 import os
 
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'  # desired output format, strftime
 
 def main(json_path, out_dir_path):
     """ Converts Google Hangouts log given in JSON format
@@ -39,15 +39,41 @@ def main(json_path, out_dir_path):
                 for msg in sorted(chats[chat_id]):
                     out.write(msg + '\n')
 
-
-def verbose_usage_and_exit():
-    """ Prints usage and exits. """
-
-    sys.stderr.write('Usage:\n')
-    sys.stderr.write('\tpython <script_name> <file_json> <out_dir>\n'.format(sys.argv[0]))
-    exit(0)
-
-
+def describe(json_path):
+    """ Prints information about the contents of a Google Hangouts
+        JSON log to standard output."""
+    
+    print("Reading " + json_path)
+    
+    with open(json_path, 'r') as json_file:
+        data = json.load(json_file)
+        participants_id_map = get_participants(data)  # returns dictionary of {userid:username}
+        chats = {}
+        message_count = 0
+        
+        print("Found " + len(participants_id_map) + " participants")
+        
+        for event in find_nodes(data, 'event'):
+            for conversation in event:
+                conversation_id = find_node(conversation, 'id')
+                timestamp = int(find_node(conversation, 'timestamp')) / 10**6
+                timestamp = dt.fromtimestamp(timestamp).strftime(DATE_FORMAT)
+                
+                sender_id = find_node(conversation['sender_id'], 'gaia_id')
+                sender = participants_id_map[sender_id]
+                
+                msgs = [msg.encode('utf-8') for msg in find_nodes(conversation, 'text') if msg.strip()]
+                for msg in msgs:
+                    message_count = message_count + 1
+                    chats.setdefault(conversation_id, []).append('{}\t{}\t{}'.format(timestamp, sender, msg))
+        
+        print("Found " + str(len(chats)) + " chats")
+        print("and " + str(message_count) + " messages")
+        print() # blank line
+        
+        print("PARTICIPANTS\n============")
+        for userid in participants_id_map:
+            print("\t" + participants_id_map[userid] + "\t" + userid)
 
 def find_nodes(root, query):
     """ Interprets json as tree and finds all nodes with given string. """
@@ -105,8 +131,18 @@ def get_participants(json_data):
 
     return participants_id_map
 
+def verbose_usage_and_exit():
+    """ Prints usage and exits. """
+
+    sys.stderr.write('Usage:\n')
+    sys.stderr.write('\tpython <script_name> <file_json> <out_dir>\n'.format(sys.argv[0]))
+    exit(0)
+
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
+    if len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2])
+    if len(sys.argv) == 2:
+        describe(sys.argv[1])
+    else:
         verbose_usage_and_exit()
-    main(sys.argv[1], sys.argv[2])
