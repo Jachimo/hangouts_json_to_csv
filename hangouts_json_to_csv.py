@@ -52,7 +52,7 @@ def describe(json_path):
         chats = {}
         message_count = 0
         
-        print("Found " + len(participants_id_map) + " participants")
+        print("Found " + str(len(participants_id_map)) + " participants")
         
         for event in find_nodes(data, 'event'):
             for conversation in event:
