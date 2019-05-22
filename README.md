@@ -1,23 +1,6 @@
-hangouts_json_to_csv
+Fork of hangouts_json_to_csv
 ===============
 
-<p>
-A Python script that converts Google Hangouts conversations stored in JSON format to CSV format.
-</p>
+A hacked-up version of Marko Ratković's `hangouts_json_to_csv` utility.
 
-<p>
-Google Takeout (https://www.google.com/settings/takeout) allows you to download all your Google account related data (mails, calendar data, contacts, Google+ posts, Hangouts conversations...)
-It creates a .zip archive containing a file which contains the Hangouts conversations encoded in JSON format.
-This script allows you to convert that file to simpler CSV file containing timestamp, sender and text of message. It creates seperate CSV file per conversation.
-</p>
-
-<p>
-Run:
-<code> python hangouts_json_to_csv.py  file_json out_dir </code>
-<ul>
-	<li> <code>file_json</code> file that you want to convert </li>
-	<li> <code>out_dir</code> directory in which all generated CSV files will be stored.</li>
-</ul>
-</p>
-
-
+You probably want to use the [original](https://github.com/mratkovic/hangouts_json_to_csv) rather than this version.
