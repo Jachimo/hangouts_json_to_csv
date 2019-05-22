@@ -1,4 +1,5 @@
 import json
+import ijson
 from datetime import datetime as dt
 import sys
 import os
@@ -46,7 +47,7 @@ def describe(json_path):
     print("Reading " + json_path)
     
     with open(json_path, 'r') as json_file:
-        data = json.load(json_file)
+        data = ijson.items(json_file, 'item')
         participants_id_map = get_participants(data)  # returns dictionary of {userid:username}
         chats = {}
         message_count = 0
