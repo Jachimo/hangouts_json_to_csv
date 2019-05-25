@@ -61,13 +61,33 @@ def describe(json_path):
         
         for event in ijson.items(json_file, 'conversations.item.events.item'):
             if 'chat_message' not in event:
-                break  # if the event doesn't contain chat message data, skip it
+                continue  # if the event doesn't contain chat message data, skip it
             
             conversation_id = event['conversation_id']['id']
             timestamp = int(event['timestamp']) / 10**6
             timestamp = dt.fromtimestamp(timestamp).strftime(DATE_FORMAT)
             
-            sender_id = ( event['chat_message']['sender_id']['chat_id'], event['chat_message']['sender_id']['gaia_id'] )
+            try:
+                sender_chat_id = event['chat_message']['sender_id']['chat_id']
+            except KeyError: 
+                if debug:
+                    print("Sender chat ID not found for " + conversation_id + ", set to None")
+                sender_chat_id = None
+            
+            try:
+                sender_gaia_id = event['chat_message']['sender_id']['gaia_id']
+            except KeyError:
+                if debug:
+                    print("Sender gaia ID not found for " + conversation_id + ", set to None")
+                sender_gaia_id = None
+            
+            if sender_chat_id is None and sender_gaia_id is None:
+                if debug:
+                    print("Sender ID could not be determined, skipping event")
+                continue  # there's no point continuing if both the sender IDs are empty
+            
+            sender_id = ( sender_chat_id , sender_gaia_id )
+                
             
             #  Determine using participants_id_map[user_id] = username  (see below)
             sender = participants_id_map[sender_id]
