@@ -12,35 +12,56 @@ def main(json_path, out_dir_path):
     """ Converts Google Hangouts log given in JSON format
         and stores them in location given as second argument.
         Logs are stored in CSV format, one file per conversaton. """
-
+    
     if not os.path.isdir(out_dir_path):
         os.mkdir(out_dir_path)
         print("Created {} directory".format(out_dir_path))
-
+    
     with open(json_path, 'r') as json_file:
-        data = json.load(json_file)
-        participants_id_map = get_participants(data)
+        participants_id_map = get_participants(json_file)
+        
         chats = {}
-
-        for event in find_nodes(data, 'event'):
-            for conversation in event:
-                conversation_id = find_node(conversation, 'id')
-                timestamp = int(find_node(conversation, 'timestamp')) / 10**6
-                timestamp = dt.fromtimestamp(timestamp).strftime(DATE_FORMAT)
-
-                sender_id = find_node(conversation['sender_id'], 'gaia_id')
-                sender = participants_id_map[sender_id]
-
-                msgs = [msg.encode('utf-8') for msg in find_nodes(conversation, 'text') if msg.strip()]
-                for msg in msgs:
-                    chats.setdefault(conversation_id, []).append('{}\t{}\t{}'.format(timestamp, sender, msg))
-
-        for chat_id in chats:
-            file_path = '{}/{}.csv'.format(out_dir_path, chat_id)
+        
+        for event in ijson.items(json_file, 'conversations.item.events.item'):
+            if 'chat_message' not in event:
+                continue
+            
+            conversation_id = event['conversation_id']['id']
+            timestamp = int(event['timestamp']) / 10**6
+            timestamp = dt.fromtimestamp(timestamp).strftime(DATE_FORMAT)
+            
+            try:
+                sender_chat_id = event['chat_message']['sender_id']['chat_id']
+            except KeyError: 
+                sender_chat_id = None
+            
+            try:
+                sender_gaia_id = event['chat_message']['sender_id']['gaia_id']
+            except KeyError:
+                sender_gaia_id = None
+            
+            if sender_chat_id is None and sender_gaia_id is None:
+                continue
+            
+            sender_id = ( sender_chat_id , sender_gaia_id )
+            
+            sender = participants_id_map[sender_id]
+            
+            for msg in event['chat_message']:
+                
+                if conversation_id not in chats:
+                    chats[conversation_id] = []
+                
+                for segment in event['chat_message']['message_content']['segment']:
+                    segment_message = (timestamp, sender_id, segment['text'])
+                    chats[conversation_id].append( segment_message )
+        
+        for conversation in chats:
+            file_path = '{}/{}.csv'.format(out_dir_path, conversation)
             with open(file_path, 'w') as out:
                 print("Created {} log file".format(file_path))
-                for msg in sorted(chats[chat_id]):
-                    out.write(msg + '\n')
+                for msg in conversation:
+                    out.write( msg[0] + '\t' + msg[1] + '\t' + msg[2] + '\n')
 
 def describe(json_path):
     """ Prints information about the contents of a Google Hangouts
@@ -138,13 +159,13 @@ def get_participants(json_file):
                 if debug:
                     print('Username not present, defaulting to ' + str(username))
             participants_id_map[user_id] = username
-
+    
     json_file.seek(0)  # reset for reuse
     return participants_id_map
 
 def verbose_usage_and_exit():
     """ Prints usage and exits. """
-
+    
     sys.stderr.write('Usage:\n')
     sys.stderr.write('\tpython <script_name> <file_json> <out_dir>\n'.format(sys.argv[0]))
     exit(1)
