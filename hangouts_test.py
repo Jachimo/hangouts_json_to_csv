@@ -51,7 +51,11 @@ def main(json_path):
                     print("- Processing segment: " + str(segment))
                     segment_message = (timestamp, sender_id, segment['text'])
                     print("Appending to chat " + str(conversation_id) + ": " + str(segment_message))
-                    chats[conversation_id] = chats[conversation_id].append( segment_message )
+                    print("Contents of chats before append: " + str(chats))
+                    print("Chats has type " + str(type(chats)) + " and chats[conversation_id] has type " + str(type(chats[conversation_id])))
+                    print("Content (of type " + str(type(segment_message)) + ") being appended: " + str(segment_message))
+                    chats[conversation_id].append( segment_message )
+                    print("Contents of chats after append: " + str(chats))
         
         print("Found " + str(len(chats)) + "total chat conversations")
         print("and " + str(message_count) + " messages")
