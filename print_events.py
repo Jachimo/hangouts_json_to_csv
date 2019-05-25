@@ -7,15 +7,18 @@ import ijson
 import sys
 import pprint
 
+MAX_OUT = 10
+
 def main(json_path):
     with open(json_path, 'rb') as json_file:
         i=0
         for event in ijson.items(json_file, 'conversations.item.events.item'):
-            if i >= 5:
+            if i >= MAX_OUT:
                 break
             print("--- BEGIN EVENT ITEM")
-            for key, value in event.items():
-                print("KEY: " + str(key) + "\n\tVALUE: " +  str(value))
+            #for key, value in event.items():
+            #    print("KEY: " + str(key) + "\n\tVALUE: " +  str(value))
+            print(str(event))
             i += 1
             print("--- END EVENT ITEM")
 
