@@ -31,7 +31,7 @@ def main(json_path):
             timestamp = int(event['timestamp']) / 10**6
             timestamp = dt.fromtimestamp(timestamp).strftime(DATE_FORMAT)
             
-            sender_id = ( event['chat_message']['sender_id']['chat_id'], event['chat_message']['sender_id']['gaia_id'] )
+            sender_id = ( event['sender_id']['chat_id'], event['sender_id']['gaia_id'] )
             
             for msg in event['chat_message']:
                 message_count = message_count + 1
@@ -52,4 +52,4 @@ def main(json_path):
         print("and " + str(message_count) + " messages")
 
 if __name__ == '__main__':
-    main(sys.argv[1]
+    main(sys.argv[1])
