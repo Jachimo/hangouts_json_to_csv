@@ -45,12 +45,11 @@ def main(json_path):
                     # each chat within it is a list
                     # each entry in the list is a tuple of (timestamp,sender,msg)
                 
-                for segments in event['chat_message']['message_content']['segment']:
-                    for segment in segments:
-                        # each segment is a list of dicts, each dict is {text : type}
-                        segment_message = (timestamp, sender_id, segment)
-                        print("Appending to chat " + str(conversation_id) + ": " + str(segment_message))
-                        chats[conversation_id] = chats[conversation_id].append( segment_message )
+                for segment in event['chat_message']['message_content']['segment']:
+                    print("Processing segment: " + str(segment))
+                    segment_message = (timestamp, sender_id, segment['text'])
+                    print("Appending to chat " + str(conversation_id) + ": " + str(segment_message))
+                    chats[conversation_id] = chats[conversation_id].append( segment_message )
         
         print("Found " + str(len(chats)) + "total chat conversations")
         print("and " + str(message_count) + " messages")
