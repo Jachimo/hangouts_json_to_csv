@@ -20,11 +20,13 @@ def main(json_path):
         message_count = 0
         
         for event in ijson.items(json_file, 'conversations.item.events.item'):
+            print("--- Processing event with ID " + event['event_id'])
             
             if message_count >= MAX_OUT:
                 break
             
             if 'chat_message' not in event:
+                print("No chat_message found in event; skipping")
                 continue  # if the event doesn't contain chat message data, skip it
             
             conversation_id = event['conversation_id']['id']
@@ -35,7 +37,7 @@ def main(json_path):
             
             for msg in event['chat_message']:
                 message_count = message_count + 1
-                print("Message count is now " + str(message_count))
+                print("-- Processing message (count is now " + str(message_count) + ")")
                 
                 if conversation_id not in chats:
                     print("New conversation ID; creating empty list")
@@ -46,7 +48,7 @@ def main(json_path):
                     # each entry in the list is a tuple of (timestamp,sender,msg)
                 
                 for segment in event['chat_message']['message_content']['segment']:
-                    print("Processing segment: " + str(segment))
+                    print("- Processing segment: " + str(segment))
                     segment_message = (timestamp, sender_id, segment['text'])
                     print("Appending to chat " + str(conversation_id) + ": " + str(segment_message))
                     chats[conversation_id] = chats[conversation_id].append( segment_message )
