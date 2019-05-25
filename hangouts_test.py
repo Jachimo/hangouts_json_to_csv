@@ -38,7 +38,9 @@ def main(json_path):
                 print("Message count is now " + str(message_count))
                 
                 if conversation_id not in chats:
+                    print("New conversation ID; creating empty list")
                     chats[conversation_id] = []  # initialize as empty
+                    print(chats)
                     # chats is a dictionary by conversation_id
                     # each chat within it is a list
                     # each entry in the list is a tuple of (timestamp,sender,msg)
@@ -46,7 +48,9 @@ def main(json_path):
                 for segments in event['chat_message']['message_content']['segment']:
                     for segment in segments:
                         # each segment is a list of dicts, each dict is {text : type}
-                        chats[conversation_id] = chats[conversation_id].append( (timestamp, sender_id, segment) )
+                        segment_message = (timestamp, sender_id, segment)
+                        print("Appending to chat " + str(conversation_id) + ": " + segment_message)
+                        chats[conversation_id] = chats[conversation_id].append( segment_message )
         
         print("Found " + str(len(chats)) + "total chat conversations")
         print("and " + str(message_count) + " messages")
