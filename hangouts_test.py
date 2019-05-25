@@ -46,10 +46,13 @@ def main(json_path):
                 for segments in event['chat_message']['message_content']['segment']:
                     for segment in segments:
                         # each segment is a list of dicts, each dict is {text : type}
-                        chats[conversation_id] = chats[conversation_id].append( (timestamp, sender, segment['text']) )
+                        chats[conversation_id] = chats[conversation_id].append( (timestamp, sender_id, segment['text']) )
         
         print("Found " + str(len(chats)) + "total chat conversations")
         print("and " + str(message_count) + " messages")
+        print("---- MESSAGE CONTENT")
+        for chat in chats:
+            print(str(chat))
 
 if __name__ == '__main__':
     main(sys.argv[1])
