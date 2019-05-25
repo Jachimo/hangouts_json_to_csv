@@ -54,13 +54,15 @@ def describe(json_path):
         print("Generating participant ID map")
         participants_id_map = get_participants(json_file)  # returns dictionary of {userid:username}
         print("Participant ID map complete")
-        print("Found " + str(len(participants_id_map)) + " participants")
+        print("\tFound " + str(len(participants_id_map)) + " participants\n")
         
         chats = {}
         message_count = 0
+        invalid_count = 0
         
         for event in ijson.items(json_file, 'conversations.item.events.item'):
             if 'chat_message' not in event:
+                invalid_count += 1
                 continue  # if the event doesn't contain chat message data, skip it
             
             conversation_id = event['conversation_id']['id']
@@ -84,6 +86,7 @@ def describe(json_path):
             if sender_chat_id is None and sender_gaia_id is None:
                 if debug:
                     print("Sender ID could not be determined, skipping event")
+                invalid_count += 1
                 continue  # there's no point continuing if both the sender IDs are empty
             
             sender_id = ( sender_chat_id , sender_gaia_id )
@@ -109,10 +112,10 @@ def describe(json_path):
         if debug:
             print("Found " + str(len(chats)) + " total chats")
             print("and " + str(message_count) + " messages")
-            print() # blank line
+            print("not including " + str(invalid_count) + " invalid events\n\n")
             print("PARTICIPANTS\n============")
             for userid in participants_id_map:
-                print("\t" + participants_id_map[userid] + "\t" + userid)
+                print("\t" + str(participants_id_map[userid]) + "\t" + str(userid))
 
 def get_participants(json_file):
     """ Finds all participants in Google Hangouts JSON log and returns dictionary
