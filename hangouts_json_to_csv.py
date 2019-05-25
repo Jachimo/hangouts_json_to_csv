@@ -111,7 +111,7 @@ def get_participants(json_file):
                 if debug:
                     print('Found user ' + str(username))
             except KeyError:
-                username = 'user_' + user_id  # use user id if we can't determine name
+                username = 'user_' + user_id[0]  # use user id if we can't determine name
                 if debug:
                     print('Username not present, defaulting to ' + str(username))
             participants_id_map[user_id] = username
