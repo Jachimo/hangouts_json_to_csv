@@ -9,13 +9,10 @@ import pprint
 
 def main(json_path):
     with open(json_path, 'rb') as json_file:
-
-#        events = ijson.items(json_file, 'conversations.item.events.item')
         i=0
         for event in ijson.items(json_file, 'conversations.item.events.item'):
             if i >= 5:
                 break
-#            pprint.pprint(event)
             print("--- BEGIN EVENT ITEM")
             for key, value in event.items():
                 print("KEY: " + str(key) + "\n\tVALUE: " +  str(value))
