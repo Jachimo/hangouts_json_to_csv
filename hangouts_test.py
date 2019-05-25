@@ -49,7 +49,7 @@ def main(json_path):
                     for segment in segments:
                         # each segment is a list of dicts, each dict is {text : type}
                         segment_message = (timestamp, sender_id, segment)
-                        print("Appending to chat " + str(conversation_id) + ": " + segment_message)
+                        print("Appending to chat " + str(conversation_id) + ": " + str(segment_message))
                         chats[conversation_id] = chats[conversation_id].append( segment_message )
         
         print("Found " + str(len(chats)) + "total chat conversations")
