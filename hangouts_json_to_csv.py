@@ -46,98 +46,53 @@ def describe(json_path):
     """ Prints information about the contents of a Google Hangouts
         JSON log to standard output."""
     
-    print("Reading " + json_path + " in describe mode")
+    if debug:
+        print("Reading " + json_path + " in describe mode")
     
     with open(json_path, 'rb') as json_file:
-
+        
         print("Generating participant ID map")
         participants_id_map = get_participants(json_file)  # returns dictionary of {userid:username}
         print("Participant ID map complete")
+        print("Found " + str(len(participants_id_map)) + " participants")
         
         chats = {}
         message_count = 0
         
-        print("Found " + str(len(participants_id_map)) + " participants")
-        
         for event in ijson.items(json_file, 'conversations.item.events.item'):
-                
+            if 'chat_message' not in event:
+                break  # if the event doesn't contain chat message data, skip it
+            
             conversation_id = event['conversation_id']['id']
             timestamp = int(event['timestamp']) / 10**6
             timestamp = dt.fromtimestamp(timestamp).strftime(DATE_FORMAT)
-                
-            sender_id = ( event['sender_id']['chat_id'], event['sender_id']['gaia_id'] )
-
-            #  participants_id_map[user_id] = username  (see below)
-            sender = participants_id_map[sender_id[0]]
-
-            # TODO: this next line won't work, need to replace find_nodes() somehow
-            msgs = [msg.encode('utf-8') for msg in find_nodes(conversation, 'text') if msg.strip()]
-
-            for msg in msgs:
+            
+            sender_id = ( event['chat_message']['sender_id']['chat_id'], event['chat_message']['sender_id']['gaia_id'] )
+            
+            #  Determine using participants_id_map[user_id] = username  (see below)
+            sender = participants_id_map[sender_id]
+            
+            for msg in event['chat_message']:
                 message_count = message_count + 1
                 print("Message count is now " + str(message_count))
-                #chats.setdefault(conversation_id, []).append('{}\t{}\t{}'.format(timestamp, sender, msg))
-                # TODO rework this to be more pythonic
+                
                 if conversation_id not in chats:
                     chats[conversation_id] = []  # initialize as empty
-                chats[conversation_id] = chats[conversation_id].append( (timestamp, sender, msg) )
-                # chats is a dictionary by conversation_id
-                # each chat within it is a list
-                # each entry in the list is a tuple of (timestamp,sender,msg)
+                    # chats is a dictionary by conversation_id
+                    # each chat within it is a list
+                    # each entry in the list is a tuple of (timestamp,sender,msg)
+                
+                for segment in event['chat_message']['message_content']['segment']:
+                    segment_message = (timestamp, sender_id, segment['text'])
+                    chats[conversation_id].append( segment_message )
         
-        print("Found " + str(len(chats)) + "total  chats")
-        print("and " + str(message_count) + " messages")
-        print() # blank line
-        
-        print("PARTICIPANTS\n============")
-        for userid in participants_id_map:
-            print("\t" + participants_id_map[userid] + "\t" + userid)
-
-def find_nodes(root, query):
-    """ Interprets json as tree and finds all nodes with given string. """
-
-    if not isinstance(root, dict):
-        return []
-
-    rv = []
-    for key, value in root.items():
-        if key == query:
-            rv.append(value)
-            continue
-
-        if not isinstance(value, list):
-            # single json entry, make json array
-            value = [value]
-
-        for node in value:
-            rv.extend(find_nodes(node, query))
-
-    return rv
-
-def find_node(root, query):
-    """ Interprets JSON as tree and finds first node with givens string. """
-
-    if not isinstance(root, dict):  # skip leaf
         if debug:
-            print("ERROR: find_node() was passed a non-dictionary object of type " + str(type(root)))
-        return None
-
-    for key, value in root.items():
-        if key == query:
-            return value
-
-        if not isinstance(value, list):
-            value = [value]
-
-        for node in value:
-            rv = find_node(node, query)
-            if rv:
-                return rv
-        
-    if debug:
-        print("find_node() did not find anything to match query: " + str(query))
-    return None
-
+            print("Found " + str(len(chats)) + " total chats")
+            print("and " + str(message_count) + " messages")
+            print() # blank line
+            print("PARTICIPANTS\n============")
+            for userid in participants_id_map:
+                print("\t" + participants_id_map[userid] + "\t" + userid)
 
 def get_participants(json_file):
     """ Finds all participants in Google Hangouts JSON log and returns dictionary
@@ -150,7 +105,7 @@ def get_participants(json_file):
     participants_id_map = {}
     for conv_participants in all_participant_data:
         for participant in conv_participants:
-            user_id = find_node(participant['id'], 'gaia_id')
+            user_id = ( participant['id']['chat_id'], participant['id']['gaia_id'] )
             try:
                 username = participant['fallback_name'].encode('utf-8')  # this sometimes throws KeyError
                 if debug:
@@ -161,7 +116,7 @@ def get_participants(json_file):
                     print('Username not present, defaulting to ' + str(username))
             participants_id_map[user_id] = username
 
-    json_file.seek(0)
+    json_file.seek(0)  # reset for reuse
     return participants_id_map
 
 def verbose_usage_and_exit():
